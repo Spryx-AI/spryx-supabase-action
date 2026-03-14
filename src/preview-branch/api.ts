@@ -96,7 +96,7 @@ export async function pollUntilReady(
  */
 export function buildDbUrl(branch: Branch): string {
   const { db_user, db_pass, db_host, db_port, db_name } = branch
-  return `postgresql://${encodeURIComponent(db_user)}:${encodeURIComponent(db_pass)}@${db_host}:${db_port}/${db_name}`
+  return `postgresql://${encodeURIComponent(db_user)}:${encodeURIComponent(db_pass)}@${db_host}:${db_port}/${encodeURIComponent(db_name)}`
 }
 
 /**
