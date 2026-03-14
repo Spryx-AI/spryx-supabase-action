@@ -1,14 +1,12 @@
 import * as core from '@actions/core'
-import { parseInputs, type Inputs } from '../inputs'
-import { validate } from '../validate'
+import { parseInputs, type Inputs } from './inputs'
 import { runAuth, runLink, runDbPush, type ExecResult } from '../exec'
-import { writeSummary, type StepResults } from '../summary'
+import { writeSummary, type StepResults } from './summary'
 
 type Step = [keyof StepResults, () => Promise<ExecResult>]
 
 async function main(): Promise<void> {
   const inputs = parseInputs()
-  validate(inputs)
 
   core.info(`Deploy: supabase db push | project: ${inputs.projectRef}`)
 
@@ -16,7 +14,7 @@ async function main(): Promise<void> {
   const status = getStatus(results)
   const applied = results.db_push?.exitCode === 0
 
-  const summaryMarkdown = await writeSummary(inputs, false, results, status)
+  const summaryMarkdown = await writeSummary(inputs, results, status)
 
   core.setOutput('status', status)
   core.setOutput('executed_db_push', String(applied))

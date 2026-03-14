@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
 import type { Inputs } from './inputs'
-import type { ExecResult } from './exec'
+import type { ExecResult } from '../exec'
 
 /** Map of step name to its execution result. */
 export interface StepResults {
@@ -15,11 +15,10 @@ export interface StepResults {
  */
 export async function writeSummary(
   inputs: Inputs,
-  dryRun: boolean,
   results: StepResults,
   status: 'success' | 'failure'
 ): Promise<string> {
-  const markdown = buildMarkdown(inputs, dryRun, results, status)
+  const markdown = buildMarkdown(inputs.projectRef, results, status)
 
   if (inputs.writeSummary) {
     await core.summary.addRaw(markdown).write()
@@ -32,21 +31,19 @@ export async function writeSummary(
  * Builds the markdown string for the deploy job summary.
  */
 function buildMarkdown(
-  inputs: Inputs,
-  dryRun: boolean,
+  projectRef: string,
   results: StepResults,
   status: 'success' | 'failure'
 ): string {
   const emoji = status === 'success' ? '✅' : '❌'
-  const applied = !dryRun && results.db_push?.exitCode === 0
+  const applied = results.db_push?.exitCode === 0
 
   const lines: string[] = [
-    `## ${emoji} Supabase DB ${dryRun ? 'Preview' : 'Deploy'}`,
+    `## ${emoji} Supabase DB Deploy`,
     '',
     '| Field | Value |',
     '|---|---|',
-    `| **Project** | \`${inputs.projectRef}\` |`,
-    `| **Dry-run** | \`${dryRun}\` |`,
+    `| **Project** | \`${projectRef}\` |`,
     `| **Migrations applied** | \`${applied}\` |`,
     `| **Status** | \`${status}\` |`,
     '',

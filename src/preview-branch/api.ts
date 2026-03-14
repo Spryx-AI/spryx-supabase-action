@@ -23,7 +23,7 @@ export interface Branch {
 /**
  * Lists all branches for the given Supabase project.
  */
-export async function listBranches(projectRef: string, token: string): Promise<Branch[]> {
+async function listBranches(projectRef: string, token: string): Promise<Branch[]> {
   return request<Branch[]>('GET', `/projects/${projectRef}/branches`, token)
 }
 
