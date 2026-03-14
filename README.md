@@ -57,10 +57,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: supabase/setup-cli@v1
-        with:
-          version: latest
-
       - uses: Spryx-AI/spryx-supabase-action/deploy@v1
         with:
           project_ref: ${{ vars.SUPABASE_PROJECT_REF }}
@@ -179,6 +175,7 @@ The access token is masked immediately after reading — it never appears in log
 
 ## Requirements
 
-- Both actions require the [Supabase CLI](https://supabase.com/docs/guides/cli) to be installed in the runner. Use [`supabase/setup-cli`](https://github.com/supabase/setup-cli) for this.
+- The deploy action installs the Supabase CLI automatically via [`supabase/setup-cli`](https://github.com/supabase/setup-cli). No manual setup step is needed.
+- The preview-branch action uses the Supabase Management API directly and requires no CLI.
 - Node.js 24 runtime (handled automatically by GitHub Actions).
-- Supabase project must have branching enabled for the preview branch action.
+- Supabase project must have branching enabled for the preview-branch action.
