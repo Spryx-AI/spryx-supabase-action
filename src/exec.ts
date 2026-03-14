@@ -9,12 +9,14 @@ export interface ExecResult {
 }
 
 /**
- * Authenticates the Supabase CLI with the given access token.
- * Runs: `supabase login --token <token>`
+ * Authenticates the Supabase CLI via the SUPABASE_ACCESS_TOKEN env var.
+ * Uses env var instead of --token flag to avoid token exposure in process listings.
  */
 export async function runAuth(token: string): Promise<ExecResult> {
   core.info('Authenticating Supabase CLI...')
-  return runCommand('supabase', ['login', '--token', token])
+  return runCommand('supabase', ['login'], {
+    env: { SUPABASE_ACCESS_TOKEN: token },
+  })
 }
 
 /**
@@ -46,13 +48,14 @@ export async function runDbPush(opts: {
 async function runCommand(
   command: string,
   args: string[],
-  options?: { cwd?: string }
+  options?: { cwd?: string; env?: Record<string, string> }
 ): Promise<ExecResult> {
   let stdout = ''
   let stderr = ''
 
   const exitCode = await exec.exec(command, args, {
     cwd: options?.cwd,
+    env: { ...filterEnv(process.env), ...options?.env },
     ignoreReturnCode: true,
     listeners: {
       stdout: (data: Buffer) => { stdout += data.toString() },
@@ -61,4 +64,10 @@ async function runCommand(
   })
 
   return { exitCode, stdout, stderr }
+}
+
+function filterEnv(env: NodeJS.ProcessEnv): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(env).filter((entry): entry is [string, string] => entry[1] !== undefined)
+  )
 }

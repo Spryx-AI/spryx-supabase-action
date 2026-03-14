@@ -128,6 +128,8 @@ jobs:
           **Commit:** `HEAD_SHA_PLACEHOLDER`
           EOF
 
+          escape_sed() { printf '%s' "$1" | sed 's/[&|\\]/\\&/g'; }
+
           sed -i \
             -e "s|OVERALL_PLACEHOLDER|$OVERALL|" \
             -e "s|COMMITLINT_PLACEHOLDER|$COMMITLINT $RESULT_COMMITLINT|" \
@@ -136,8 +138,8 @@ jobs:
             -e "s|FORMAT_PLACEHOLDER|$FORMAT $RESULT_FORMAT|" \
             -e "s|TEST_PLACEHOLDER|$TEST $RESULT_TEST|" \
             -e "s|PR_NUMBER_PLACEHOLDER|$PR_NUMBER|" \
-            -e "s|PR_TITLE_PLACEHOLDER|$PR_TITLE|" \
-            -e "s|HEAD_REF_PLACEHOLDER|$HEAD_REF|" \
-            -e "s|BASE_REF_PLACEHOLDER|$BASE_REF|" \
+            -e "s|PR_TITLE_PLACEHOLDER|$(escape_sed "$PR_TITLE")|" \
+            -e "s|HEAD_REF_PLACEHOLDER|$(escape_sed "$HEAD_REF")|" \
+            -e "s|BASE_REF_PLACEHOLDER|$(escape_sed "$BASE_REF")|" \
             -e "s|HEAD_SHA_PLACEHOLDER|$HEAD_SHA|" \
             "$GITHUB_STEP_SUMMARY"
