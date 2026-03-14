@@ -39,15 +39,15 @@ export async function createBranch(projectRef: string, branchName: string, token
 /**
  * Fetches the current state of a branch by ID.
  */
-export async function getBranch(projectRef: string, branchId: string, token: string): Promise<Branch> {
-  return request<Branch>('GET', `/projects/${projectRef}/branches/${branchId}`, token)
+export async function getBranch(branchId: string, token: string): Promise<Branch> {
+  return request<Branch>('GET', `/branches/${branchId}`, token)
 }
 
 /**
  * Deletes a branch by ID.
  */
-export async function deleteBranch(projectRef: string, branchId: string, token: string): Promise<void> {
-  return request<void>('DELETE', `/projects/${projectRef}/branches/${branchId}`, token)
+export async function deleteBranch(branchId: string, token: string): Promise<void> {
+  return request<void>('DELETE', `/branches/${branchId}`, token)
 }
 
 /**
@@ -67,7 +67,6 @@ export async function findBranchByName(
  * @throws if the branch reaches a terminal error state or the timeout expires.
  */
 export async function pollUntilReady(
-  projectRef: string,
   branchId: string,
   token: string,
   timeoutMs: number
@@ -75,7 +74,7 @@ export async function pollUntilReady(
   const deadline = Date.now() + timeoutMs
 
   for (let attempt = 1; Date.now() < deadline; attempt++) {
-    const branch = await getBranch(projectRef, branchId, token)
+    const branch = await getBranch(branchId, token)
     core.info(`[poll #${attempt}] Branch "${branch.name}" status: ${branch.status}`)
 
     if (branch.status === READY_STATUS) return branch
