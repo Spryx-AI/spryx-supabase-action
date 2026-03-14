@@ -5,48 +5,56 @@ const POLL_INTERVAL_MS = 5_000
 const READY_STATUS = 'ACTIVE_HEALTHY'
 const TERMINAL_STATUSES = ['CREATE_FAILED', 'UNKNOWN']
 
-/** Represents a Supabase preview branch and its connection details. */
-export interface Branch {
+/**
+ * Branch summary returned by the list and create endpoints.
+ * GET /projects/{ref}/branches  →  BranchResponse[]
+ * POST /projects/{ref}/branches →  BranchResponse
+ */
+export interface BranchSummary {
   id: string
-  name?: string // present in list endpoint (/projects/{ref}/branches)
-  git_branch?: string // present in individual endpoint (/branches/{id})
+  name: string
+  status: string
+}
+
+/**
+ * Branch connection details returned by the individual branch endpoint.
+ * GET /branches/{id} → BranchDetailResponse
+ * Name is NOT present in this response; use BranchSummary for that.
+ */
+export interface BranchDetail {
   status: string
   db_host: string
-  db_user: string
-  db_pass: string
   db_port: number
-  db_name: string
+  db_user?: string
+  db_pass?: string
+  db_name?: string
   supabase_url?: string
   anon_key?: string
   service_role_key?: string
 }
 
-/** Returns the branch name regardless of which endpoint populated the object. */
-export function branchName(branch: Branch): string {
-  return branch.name ?? branch.git_branch ?? ''
-}
-
 /**
  * Lists all branches for the given Supabase project.
  */
-async function listBranches(projectRef: string, token: string): Promise<Branch[]> {
-  return request<Branch[]>('GET', `/projects/${projectRef}/branches`, token)
+async function listBranches(projectRef: string, token: string): Promise<BranchSummary[]> {
+  return request<BranchSummary[]>('GET', `/projects/${projectRef}/branches`, token)
 }
 
 /**
  * Creates a new branch with the given name under the project.
  */
-export async function createBranch(projectRef: string, branchName: string, token: string): Promise<Branch> {
-  return request<Branch>('POST', `/projects/${projectRef}/branches`, token, {
-    branch_name: branchName,
+export async function createBranch(projectRef: string, name: string, token: string): Promise<BranchSummary> {
+  return request<BranchSummary>('POST', `/projects/${projectRef}/branches`, token, {
+    branch_name: name,
   })
 }
 
 /**
- * Fetches the current state of a branch by ID.
+ * Fetches connection details for a branch by ID.
+ * Note: this endpoint does not return the branch name.
  */
-export async function getBranch(branchId: string, token: string): Promise<Branch> {
-  return request<Branch>('GET', `/branches/${branchId}`, token)
+export async function getBranch(branchId: string, token: string): Promise<BranchDetail> {
+  return request<BranchDetail>('GET', `/branches/${branchId}`, token)
 }
 
 /**
@@ -61,28 +69,28 @@ export async function deleteBranch(branchId: string, token: string): Promise<voi
  */
 export async function findBranchByName(
   projectRef: string,
-  targetName: string,
+  name: string,
   token: string
-): Promise<Branch | undefined> {
+): Promise<BranchSummary | undefined> {
   const branches = await listBranches(projectRef, token)
-  return branches.find((b) => branchName(b) === targetName)
+  return branches.find((b) => b.name === name)
 }
 
 /**
  * Polls a branch every 5 seconds until it reaches `ACTIVE_HEALTHY` status.
  * @throws if the branch reaches a terminal error state or the timeout expires.
  */
-export async function pollUntilReady(branchId: string, token: string, timeoutMs: number): Promise<Branch> {
+export async function pollUntilReady(branchId: string, token: string, timeoutMs: number): Promise<BranchDetail> {
   const deadline = Date.now() + timeoutMs
 
   for (let attempt = 1; Date.now() < deadline; attempt++) {
-    const branch = await getBranch(branchId, token)
-    core.info(`[poll #${attempt}] Branch "${branchName(branch)}" status: ${branch.status}`)
+    const detail = await getBranch(branchId, token)
+    core.info(`[poll #${attempt}] status: ${detail.status}`)
 
-    if (branch.status === READY_STATUS) return branch
+    if (detail.status === READY_STATUS) return detail
 
-    if (TERMINAL_STATUSES.includes(branch.status)) {
-      throw new Error(`Branch reached terminal error state: ${branch.status}`)
+    if (TERMINAL_STATUSES.includes(detail.status)) {
+      throw new Error(`Branch reached terminal error state: ${detail.status}`)
     }
 
     if (Date.now() + POLL_INTERVAL_MS >= deadline) break
@@ -95,8 +103,8 @@ export async function pollUntilReady(branchId: string, token: string, timeoutMs:
 /**
  * Builds a PostgreSQL connection URL from branch connection details.
  */
-export function buildDbUrl(branch: Branch): string {
-  const { db_user, db_pass, db_host, db_port, db_name } = branch
+export function buildDbUrl(detail: BranchDetail): string {
+  const { db_user = '', db_pass = '', db_host, db_port, db_name = 'postgres' } = detail
   return `postgresql://${encodeURIComponent(db_user)}:${encodeURIComponent(db_pass)}@${db_host}:${db_port}/${encodeURIComponent(db_name)}`
 }
 

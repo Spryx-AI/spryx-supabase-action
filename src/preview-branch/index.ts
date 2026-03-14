@@ -6,8 +6,8 @@ import {
   deleteBranch,
   pollUntilReady,
   buildDbUrl,
-  branchName,
-  type Branch,
+  type BranchSummary,
+  type BranchDetail,
 } from './api'
 import { writeSummary } from './summary'
 
@@ -29,23 +29,22 @@ async function handleCreate(inputs: BranchInputs): Promise<void> {
   const { projectRef, supabaseAccessToken, waitTimeoutMs } = inputs
 
   const existing = await findBranchByName(projectRef, inputs.branchName, supabaseAccessToken)
-
-  const branchToWait = existing ?? (await createBranch(projectRef, inputs.branchName, supabaseAccessToken))
+  const summary = existing ?? (await createBranch(projectRef, inputs.branchName, supabaseAccessToken))
 
   if (existing) {
-    core.info(`Branch "${inputs.branchName}" already exists (id: ${existing.id}), waiting for ready state...`)
+    core.info(`Branch "${inputs.branchName}" already exists (id: ${summary.id}), waiting for ready state...`)
   } else {
-    core.info(`Branch created (id: ${branchToWait.id}), waiting for ready state...`)
+    core.info(`Branch created (id: ${summary.id}), waiting for ready state...`)
   }
 
-  const branch = await pollUntilReady(branchToWait.id, supabaseAccessToken, waitTimeoutMs)
+  const detail = await pollUntilReady(summary.id, supabaseAccessToken, waitTimeoutMs)
 
-  maskBranchSecrets(branch)
-  setCreateOutputs(branch)
+  maskBranchSecrets(detail)
+  setCreateOutputs(summary, detail)
 
-  const summaryMarkdown = await writeSummary(inputs, 'create', branch, 'success')
+  const summaryMarkdown = await writeSummary(inputs, 'create', summary, detail, 'success')
   core.setOutput('summary_markdown', summaryMarkdown)
-  core.info(`Branch "${branchName(branch)}" is ready.`)
+  core.info(`Branch "${inputs.branchName}" is ready.`)
 }
 
 /**
@@ -68,31 +67,31 @@ async function handleDelete(inputs: BranchInputs): Promise<void> {
   core.setOutput('branch_id', existing?.id ?? '')
   core.setOutput('branch_name', inputs.branchName)
 
-  const summaryMarkdown = await writeSummary(inputs, 'delete', existing ?? null, 'success')
+  const summaryMarkdown = await writeSummary(inputs, 'delete', existing ?? null, null, 'success')
   core.setOutput('summary_markdown', summaryMarkdown)
 }
 
 /**
  * Masks sensitive branch credentials so they never appear in logs.
  */
-function maskBranchSecrets(branch: Branch): void {
-  if (branch.db_pass) core.setSecret(branch.db_pass)
-  if (branch.service_role_key) core.setSecret(branch.service_role_key)
-  const dbUrl = buildDbUrl(branch)
+function maskBranchSecrets(detail: BranchDetail): void {
+  if (detail.db_pass) core.setSecret(detail.db_pass)
+  if (detail.service_role_key) core.setSecret(detail.service_role_key)
+  const dbUrl = buildDbUrl(detail)
   core.setSecret(dbUrl)
 }
 
 /**
  * Sets all GitHub Action outputs for a successfully created/ready branch.
  */
-function setCreateOutputs(branch: Branch): void {
+function setCreateOutputs(summary: BranchSummary, detail: BranchDetail): void {
   core.setOutput('status', 'success')
-  core.setOutput('branch_id', branch.id)
-  core.setOutput('branch_name', branchName(branch))
-  core.setOutput('db_url', buildDbUrl(branch))
-  core.setOutput('supabase_url', branch.supabase_url ?? '')
-  core.setOutput('anon_key', branch.anon_key ?? '')
-  core.setOutput('service_role_key', branch.service_role_key ?? '')
+  core.setOutput('branch_id', summary.id)
+  core.setOutput('branch_name', summary.name)
+  core.setOutput('db_url', buildDbUrl(detail))
+  core.setOutput('supabase_url', detail.supabase_url ?? '')
+  core.setOutput('anon_key', detail.anon_key ?? '')
+  core.setOutput('service_role_key', detail.service_role_key ?? '')
 }
 
 main().catch((err: unknown) => {

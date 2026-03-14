@@ -1,5 +1,5 @@
 import * as core from '@actions/core'
-import { branchName, type Branch } from './api'
+import type { BranchSummary, BranchDetail } from './api'
 import type { BranchInputs } from './inputs'
 
 /**
@@ -9,11 +9,14 @@ import type { BranchInputs } from './inputs'
 export async function writeSummary(
   inputs: BranchInputs,
   action: 'create' | 'delete',
-  branch: Branch | null,
+  summary: BranchSummary | null,
+  detail: BranchDetail | null,
   status: 'success' | 'failure'
 ): Promise<string> {
   const markdown =
-    action === 'create' ? buildCreateSummary(branch, status) : buildDeleteSummary(inputs.branchName, branch, status)
+    action === 'create'
+      ? buildCreateSummary(summary, detail, status)
+      : buildDeleteSummary(inputs.branchName, summary, status)
 
   if (inputs.writeSummary) {
     await core.summary.addRaw(markdown).write()
@@ -25,21 +28,25 @@ export async function writeSummary(
 /**
  * Builds the markdown summary for a branch create operation.
  */
-function buildCreateSummary(branch: Branch | null, status: 'success' | 'failure'): string {
+function buildCreateSummary(
+  summary: BranchSummary | null,
+  detail: BranchDetail | null,
+  status: 'success' | 'failure'
+): string {
   const emoji = status === 'success' ? '✅' : '❌'
 
-  if (!branch) {
+  if (!summary) {
     return [`## ${emoji} Supabase Preview Branch`, '', `Status: \`${status}\``].join('\n')
   }
 
   const rows = [
-    `| **Branch name** | \`${branchName(branch)}\` |`,
-    `| **Branch ID** | \`${branch.id}\` |`,
-    `| **Status** | \`${branch.status}\` |`,
-    `| **DB host** | \`${branch.db_host}\` |`,
-    branch.supabase_url ? `| **Supabase URL** | \`${branch.supabase_url}\` |` : null,
-    `| **Anon key** | \`${branch.anon_key ? 'available' : 'unavailable'}\` |`,
-    `| **Service role key** | \`${branch.service_role_key ? 'available' : 'unavailable'}\` |`,
+    `| **Branch name** | \`${summary.name}\` |`,
+    `| **Branch ID** | \`${summary.id}\` |`,
+    `| **Status** | \`${summary.status}\` |`,
+    detail?.db_host ? `| **DB host** | \`${detail.db_host}\` |` : null,
+    detail?.supabase_url ? `| **Supabase URL** | \`${detail.supabase_url}\` |` : null,
+    detail ? `| **Anon key** | \`${detail.anon_key ? 'available' : 'unavailable'}\` |` : null,
+    detail ? `| **Service role key** | \`${detail.service_role_key ? 'available' : 'unavailable'}\` |` : null,
   ].filter(Boolean)
 
   return [
@@ -56,10 +63,10 @@ function buildCreateSummary(branch: Branch | null, status: 'success' | 'failure'
 /**
  * Builds the markdown summary for a branch delete operation.
  */
-function buildDeleteSummary(targetName: string, branch: Branch | null, status: 'success' | 'failure'): string {
+function buildDeleteSummary(targetName: string, summary: BranchSummary | null, status: 'success' | 'failure'): string {
   const emoji = status === 'success' ? '✅' : '❌'
-  const detail = branch
-    ? `Branch \`${branchName(branch)}\` (ID: \`${branch.id}\`) was deleted successfully.`
+  const detail = summary
+    ? `Branch \`${summary.name}\` (ID: \`${summary.id}\`) was deleted successfully.`
     : `Branch \`${targetName}\` not found — nothing to delete.`
 
   return [`## ${emoji} Supabase Preview Branch — Cleanup`, '', detail].join('\n')
