@@ -30,7 +30,7 @@ async function handleCreate(inputs: BranchInputs): Promise<void> {
     core.info(`Branch created (id: ${branchToWait.id}), waiting for ready state...`)
   }
 
-  const branch = await pollUntilReady(projectRef, branchToWait.id, supabaseAccessToken, waitTimeoutMs)
+  const branch = await pollUntilReady(branchToWait.id, supabaseAccessToken, waitTimeoutMs)
 
   maskBranchSecrets(branch)
   setCreateOutputs(branch)
@@ -52,7 +52,7 @@ async function handleDelete(inputs: BranchInputs): Promise<void> {
     core.warning(`Branch "${branchName}" not found in project ${projectRef}. Skipping delete.`)
   } else {
     core.info(`Deleting branch "${branchName}" (id: ${existing.id})...`)
-    await deleteBranch(projectRef, existing.id, supabaseAccessToken)
+    await deleteBranch(existing.id, supabaseAccessToken)
     core.info(`Branch "${branchName}" deleted.`)
   }
 
