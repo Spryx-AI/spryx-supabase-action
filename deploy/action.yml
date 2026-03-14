@@ -1,0 +1,35 @@
+name: 'Spryx Supabase Deploy'
+description: 'Apply migrations to a Supabase project via supabase db push'
+author: 'Spryx'
+
+inputs:
+  project_ref:
+    description: 'Supabase project reference ID'
+    required: true
+  supabase_access_token:
+    description: 'Supabase access token for CLI authentication'
+    required: true
+  working_directory:
+    description: 'Directory containing the supabase/ folder'
+    required: false
+    default: '.'
+  write_summary:
+    description: 'Write a job summary to GITHUB_STEP_SUMMARY'
+    required: false
+    default: 'true'
+
+outputs:
+  status:
+    description: 'Execution status: success or failure'
+  executed_db_push:
+    description: 'Whether migrations were applied (true/false)'
+  summary_markdown:
+    description: 'The markdown content written to the job summary'
+
+runs:
+  using: 'node24'
+  main: '../dist/deploy.js'
+
+branding:
+  icon: 'database'
+  color: 'green'
