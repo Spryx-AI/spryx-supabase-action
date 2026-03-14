@@ -21,14 +21,26 @@ inputs:
 outputs:
   status:
     description: 'Execution status: success or failure'
+    value: ${{ steps.run.outputs.status }}
   executed_db_push:
     description: 'Whether migrations were applied (true/false)'
+    value: ${{ steps.run.outputs.executed_db_push }}
   summary_markdown:
     description: 'The markdown content written to the job summary'
+    value: ${{ steps.run.outputs.summary_markdown }}
 
 runs:
-  using: 'node24'
-  main: '../dist/deploy.js'
+  using: 'composite'
+  steps:
+    - name: Install Supabase CLI
+      uses: supabase/setup-cli@v1
+      with:
+        version: latest
+
+    - id: run
+      name: Deploy
+      shell: bash
+      run: node "${{ github.action_path }}/../dist/deploy.js"
 
 branding:
   icon: 'database'
