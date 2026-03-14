@@ -1,0 +1,41 @@
+{
+  "name": "spryx-supabase-action",
+  "version": "1.0.0",
+  "description": "GitHub Action for deploying Supabase migrations via supabase db push",
+  "main": "dist/index.js",
+  "private": true,
+  "scripts": {
+    "build": "tsc --outDir dist_tsc && node scripts/bundle.js && rm -rf dist_tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "format:check": "prettier --check .",
+    "format:fix": "prettier --write .",
+    "test": "vitest run"
+  },
+  "commitlint": {
+    "extends": ["@commitlint/config-conventional"]
+  },
+  "dependencies": {
+    "@actions/core": "^1.10.1",
+    "@actions/exec": "^1.1.1"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.4.4",
+    "@commitlint/config-conventional": "^20.4.4",
+    "@semantic-release/commit-analyzer": "^13.0.1",
+    "@semantic-release/exec": "^7.1.0",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^12.0.6",
+    "@semantic-release/npm": "^13.1.5",
+    "@semantic-release/release-notes-generator": "^14.1.0",
+    "@types/node": "^24.12.0",
+    "@typescript-eslint/eslint-plugin": "^8.57.0",
+    "@typescript-eslint/parser": "^8.57.0",
+    "@vercel/ncc": "^0.38.0",
+    "eslint": "^10.0.3",
+    "prettier": "^3.8.1",
+    "semantic-release": "^25.0.3",
+    "typescript": "^5.4.0",
+    "vitest": "^4.1.0"
+  }
+}

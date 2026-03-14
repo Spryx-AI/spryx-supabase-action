@@ -1,0 +1,51 @@
+name: 'Spryx Supabase Preview Branch'
+description: 'Create or delete ephemeral Supabase preview branches for PR environments'
+author: 'Spryx'
+
+inputs:
+  action:
+    description: 'Lifecycle action: create or delete'
+    required: true
+  project_ref:
+    description: 'Supabase project reference ID'
+    required: true
+  branch_name:
+    description: 'Branch name (e.g. pr-123). Must be unique per project.'
+    required: true
+  supabase_access_token:
+    description: 'Supabase access token for Management API authentication'
+    required: true
+  wait_timeout:
+    description: 'Seconds to wait for branch to become ready (create only)'
+    required: false
+    default: '120'
+  write_summary:
+    description: 'Write a job summary to GITHUB_STEP_SUMMARY'
+    required: false
+    default: 'true'
+
+outputs:
+  status:
+    description: 'Execution status: success or failure'
+  branch_id:
+    description: 'Supabase branch ID'
+  branch_name:
+    description: 'Resolved branch name used'
+  db_url:
+    description: 'PostgreSQL connection string for the branch (masked)'
+  supabase_url:
+    description: 'Supabase API URL for the branch'
+  anon_key:
+    description: 'Supabase anonymous key for the branch'
+  service_role_key:
+    description: 'Supabase service role key for the branch (masked)'
+  summary_markdown:
+    description: 'Markdown content written to job summary'
+
+runs:
+  using: 'node24'
+  main: '../dist/preview-branch.js'
+
+branding:
+  icon: 'git-branch'
+  color: 'green'
