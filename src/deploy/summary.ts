@@ -30,11 +30,7 @@ export async function writeSummary(
 /**
  * Builds the markdown string for the deploy job summary.
  */
-function buildMarkdown(
-  projectRef: string,
-  results: StepResults,
-  status: 'success' | 'failure'
-): string {
+function buildMarkdown(projectRef: string, results: StepResults, status: 'success' | 'failure'): string {
   const emoji = status === 'success' ? '✅' : '❌'
   const applied = results.db_push?.exitCode === 0
 

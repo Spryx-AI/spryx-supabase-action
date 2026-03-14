@@ -31,8 +31,8 @@ async function main(): Promise<void> {
  */
 async function runPipeline(inputs: Inputs): Promise<StepResults> {
   const steps: Step[] = [
-    ['auth',    () => runAuth(inputs.supabaseAccessToken)],
-    ['link',    () => runLink(inputs.projectRef, inputs.workingDirectory)],
+    ['auth', () => runAuth(inputs.supabaseAccessToken)],
+    ['link', () => runLink(inputs.projectRef, inputs.workingDirectory)],
     ['db_push', () => runDbPush({ dryRun: false, workingDirectory: inputs.workingDirectory })],
   ]
 

@@ -32,10 +32,7 @@ export async function runLink(projectRef: string, workingDirectory: string): Pro
  * Runs `supabase db push` in the given working directory.
  * Passes `--dry-run` when `opts.dryRun` is true.
  */
-export async function runDbPush(opts: {
-  dryRun: boolean
-  workingDirectory: string
-}): Promise<ExecResult> {
+export async function runDbPush(opts: { dryRun: boolean; workingDirectory: string }): Promise<ExecResult> {
   const args = opts.dryRun ? ['db', 'push', '--dry-run'] : ['db', 'push']
   core.info(`Running: supabase ${args.join(' ')}`)
   return runCommand('supabase', args, { cwd: opts.workingDirectory })
@@ -58,8 +55,12 @@ async function runCommand(
     env: { ...filterEnv(process.env), ...options?.env },
     ignoreReturnCode: true,
     listeners: {
-      stdout: (data: Buffer) => { stdout += data.toString() },
-      stderr: (data: Buffer) => { stderr += data.toString() },
+      stdout: (data: Buffer) => {
+        stdout += data.toString()
+      },
+      stderr: (data: Buffer) => {
+        stderr += data.toString()
+      },
     },
   })
 
@@ -67,7 +68,5 @@ async function runCommand(
 }
 
 function filterEnv(env: NodeJS.ProcessEnv): Record<string, string> {
-  return Object.fromEntries(
-    Object.entries(env).filter((entry): entry is [string, string] => entry[1] !== undefined)
-  )
+  return Object.fromEntries(Object.entries(env).filter((entry): entry is [string, string] => entry[1] !== undefined))
 }

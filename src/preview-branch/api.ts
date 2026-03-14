@@ -30,11 +30,7 @@ async function listBranches(projectRef: string, token: string): Promise<Branch[]
 /**
  * Creates a new branch with the given name under the project.
  */
-export async function createBranch(
-  projectRef: string,
-  branchName: string,
-  token: string
-): Promise<Branch> {
+export async function createBranch(projectRef: string, branchName: string, token: string): Promise<Branch> {
   return request<Branch>('POST', `/projects/${projectRef}/branches`, token, {
     branch_name: branchName,
   })
@@ -43,22 +39,14 @@ export async function createBranch(
 /**
  * Fetches the current state of a branch by ID.
  */
-export async function getBranch(
-  projectRef: string,
-  branchId: string,
-  token: string
-): Promise<Branch> {
+export async function getBranch(projectRef: string, branchId: string, token: string): Promise<Branch> {
   return request<Branch>('GET', `/projects/${projectRef}/branches/${branchId}`, token)
 }
 
 /**
  * Deletes a branch by ID.
  */
-export async function deleteBranch(
-  projectRef: string,
-  branchId: string,
-  token: string
-): Promise<void> {
+export async function deleteBranch(projectRef: string, branchId: string, token: string): Promise<void> {
   return request<void>('DELETE', `/projects/${projectRef}/branches/${branchId}`, token)
 }
 
@@ -115,12 +103,7 @@ export function buildDbUrl(branch: Branch): string {
  * Sends an authenticated request to the Supabase Management API.
  * @throws on non-2xx responses.
  */
-async function request<T>(
-  method: string,
-  path: string,
-  token: string,
-  body?: unknown
-): Promise<T> {
+async function request<T>(method: string, path: string, token: string, body?: unknown): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     method,
     headers: {

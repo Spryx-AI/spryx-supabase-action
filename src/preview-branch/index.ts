@@ -22,7 +22,7 @@ async function handleCreate(inputs: BranchInputs): Promise<void> {
 
   const existing = await findBranchByName(projectRef, branchName, supabaseAccessToken)
 
-  const branchToWait = existing ?? await createBranch(projectRef, branchName, supabaseAccessToken)
+  const branchToWait = existing ?? (await createBranch(projectRef, branchName, supabaseAccessToken))
 
   if (existing) {
     core.info(`Branch "${branchName}" already exists (id: ${existing.id}), waiting for ready state...`)

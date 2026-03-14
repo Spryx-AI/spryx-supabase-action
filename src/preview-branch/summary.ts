@@ -12,9 +12,8 @@ export async function writeSummary(
   branch: Branch | null,
   status: 'success' | 'failure'
 ): Promise<string> {
-  const markdown = action === 'create'
-    ? buildCreateSummary(branch, status)
-    : buildDeleteSummary(inputs.branchName, branch, status)
+  const markdown =
+    action === 'create' ? buildCreateSummary(branch, status) : buildDeleteSummary(inputs.branchName, branch, status)
 
   if (inputs.writeSummary) {
     await core.summary.addRaw(markdown).write()
@@ -57,11 +56,7 @@ function buildCreateSummary(branch: Branch | null, status: 'success' | 'failure'
 /**
  * Builds the markdown summary for a branch delete operation.
  */
-function buildDeleteSummary(
-  branchName: string,
-  branch: Branch | null,
-  status: 'success' | 'failure'
-): string {
+function buildDeleteSummary(branchName: string, branch: Branch | null, status: 'success' | 'failure'): string {
   const emoji = status === 'success' ? '✅' : '❌'
   const detail = branch
     ? `Branch \`${branch.name}\` (ID: \`${branch.id}\`) was deleted successfully.`
