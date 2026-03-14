@@ -1,5 +1,5 @@
 import * as core from '@actions/core'
-import type { Branch } from './api'
+import { branchName, type Branch } from './api'
 import type { BranchInputs } from './inputs'
 
 /**
@@ -33,7 +33,7 @@ function buildCreateSummary(branch: Branch | null, status: 'success' | 'failure'
   }
 
   const rows = [
-    `| **Branch name** | \`${branch.name}\` |`,
+    `| **Branch name** | \`${branchName(branch)}\` |`,
     `| **Branch ID** | \`${branch.id}\` |`,
     `| **Status** | \`${branch.status}\` |`,
     `| **DB host** | \`${branch.db_host}\` |`,
@@ -56,11 +56,11 @@ function buildCreateSummary(branch: Branch | null, status: 'success' | 'failure'
 /**
  * Builds the markdown summary for a branch delete operation.
  */
-function buildDeleteSummary(branchName: string, branch: Branch | null, status: 'success' | 'failure'): string {
+function buildDeleteSummary(targetName: string, branch: Branch | null, status: 'success' | 'failure'): string {
   const emoji = status === 'success' ? '✅' : '❌'
   const detail = branch
-    ? `Branch \`${branch.name}\` (ID: \`${branch.id}\`) was deleted successfully.`
-    : `Branch \`${branchName}\` not found — nothing to delete.`
+    ? `Branch \`${branchName(branch)}\` (ID: \`${branch.id}\`) was deleted successfully.`
+    : `Branch \`${targetName}\` not found — nothing to delete.`
 
   return [`## ${emoji} Supabase Preview Branch — Cleanup`, '', detail].join('\n')
 }

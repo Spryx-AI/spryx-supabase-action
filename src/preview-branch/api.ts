@@ -8,7 +8,8 @@ const TERMINAL_STATUSES = ['CREATE_FAILED', 'UNKNOWN']
 /** Represents a Supabase preview branch and its connection details. */
 export interface Branch {
   id: string
-  name: string
+  name?: string // present in list endpoint (/projects/{ref}/branches)
+  git_branch?: string // present in individual endpoint (/branches/{id})
   status: string
   db_host: string
   db_user: string
@@ -18,6 +19,11 @@ export interface Branch {
   supabase_url?: string
   anon_key?: string
   service_role_key?: string
+}
+
+/** Returns the branch name regardless of which endpoint populated the object. */
+export function branchName(branch: Branch): string {
+  return branch.name ?? branch.git_branch ?? ''
 }
 
 /**
@@ -55,27 +61,23 @@ export async function deleteBranch(branchId: string, token: string): Promise<voi
  */
 export async function findBranchByName(
   projectRef: string,
-  branchName: string,
+  targetName: string,
   token: string
 ): Promise<Branch | undefined> {
   const branches = await listBranches(projectRef, token)
-  return branches.find((b) => b.name === branchName)
+  return branches.find((b) => branchName(b) === targetName)
 }
 
 /**
  * Polls a branch every 5 seconds until it reaches `ACTIVE_HEALTHY` status.
  * @throws if the branch reaches a terminal error state or the timeout expires.
  */
-export async function pollUntilReady(
-  branchId: string,
-  token: string,
-  timeoutMs: number
-): Promise<Branch> {
+export async function pollUntilReady(branchId: string, token: string, timeoutMs: number): Promise<Branch> {
   const deadline = Date.now() + timeoutMs
 
   for (let attempt = 1; Date.now() < deadline; attempt++) {
     const branch = await getBranch(branchId, token)
-    core.info(`[poll #${attempt}] Branch "${branch.name}" status: ${branch.status}`)
+    core.info(`[poll #${attempt}] Branch "${branchName(branch)}" status: ${branch.status}`)
 
     if (branch.status === READY_STATUS) return branch
 
