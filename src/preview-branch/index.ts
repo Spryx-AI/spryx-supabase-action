@@ -9,8 +9,11 @@ import {
   type BranchSummary,
   type BranchDetail,
 } from './api'
-import { runAuth, runLink, runDbPush, type ExecResult } from '../exec'
+import { runAuth, runLink, runDbReset, type ExecResult } from '../exec'
 import { writeSummary } from './summary'
+
+const RESET_MAX_RETRIES = 5
+const RESET_RETRY_DELAY_MS = 10_000
 
 async function main(): Promise<void> {
   const inputs = parseInputs()
@@ -24,23 +27,21 @@ async function main(): Promise<void> {
 }
 
 /**
- * Creates a fresh preview branch, waits until ready, then sets all outputs.
- * If a branch with the same name already exists, it is deleted first to ensure
- * a clean state (all migrations re-applied from scratch + seeds).
+ * Creates or reuses a preview branch, waits until ready, then sets all outputs.
+ * When `includeSeed` is true, runs `supabase db reset --linked` to ensure a
+ * clean state: drops schema, re-applies all migrations, and runs seeds.
  */
 async function handleCreate(inputs: BranchInputs): Promise<void> {
   const { projectRef, supabaseAccessToken, waitTimeoutMs } = inputs
 
   const existing = await findBranchByName(projectRef, inputs.branchName, supabaseAccessToken)
+  const summary = existing ?? (await createBranch(projectRef, inputs.branchName, supabaseAccessToken))
 
   if (existing) {
-    core.info(`Branch "${inputs.branchName}" already exists (id: ${existing.id}), recreating for a clean state...`)
-    await deleteBranch(existing.id, supabaseAccessToken)
-    core.info(`Branch "${inputs.branchName}" deleted.`)
+    core.info(`Branch "${inputs.branchName}" already exists (id: ${summary.id}), reusing...`)
+  } else {
+    core.info(`Branch created (id: ${summary.id}), waiting for ready state...`)
   }
-
-  const summary = await createBranch(projectRef, inputs.branchName, supabaseAccessToken)
-  core.info(`Branch created (id: ${summary.id}), waiting for ready state...`)
 
   const detail = await pollUntilReady(summary.id, supabaseAccessToken, waitTimeoutMs)
 
@@ -48,10 +49,10 @@ async function handleCreate(inputs: BranchInputs): Promise<void> {
   setCreateOutputs(summary, detail)
 
   if (inputs.includeSeed) {
-    core.info('Running seed files on the preview branch...')
+    core.info('Resetting branch database (migrations + seeds)...')
     const authResult = await runAuth(supabaseAccessToken)
     if (authResult.exitCode !== 0) {
-      core.setFailed(`Auth failed before seeding: ${authResult.stderr}`)
+      core.setFailed(`Auth failed: ${authResult.stderr}`)
       return
     }
     const linkResult = await runLink(detail.ref, inputs.workingDirectory)
@@ -59,12 +60,12 @@ async function handleCreate(inputs: BranchInputs): Promise<void> {
       core.setFailed(`Link to branch project failed: ${linkResult.stderr}`)
       return
     }
-    const pushResult = await retryDbPush(inputs.workingDirectory)
-    if (pushResult.exitCode !== 0) {
-      core.setFailed(`Seed failed: ${pushResult.stderr}`)
+    const resetResult = await retryDbReset(inputs.workingDirectory)
+    if (resetResult.exitCode !== 0) {
+      core.setFailed(`Database reset failed: ${resetResult.stderr}`)
       return
     }
-    core.info('Seed completed successfully.')
+    core.info('Database reset completed (migrations + seeds applied).')
   }
 
   const summaryMarkdown = await writeSummary(inputs, 'create', summary, detail, 'success')
@@ -119,29 +120,27 @@ function setCreateOutputs(summary: BranchSummary, detail: BranchDetail): void {
   core.setOutput('service_role_key', detail.service_role_key ?? '')
 }
 
-const SEED_MAX_RETRIES = 5
-const SEED_RETRY_DELAY_MS = 10_000
-
 /**
- * Retries `supabase db push --include-seed` to handle cases where the
- * database is still starting up after branch creation.
+ * Retries `supabase db reset --linked` to handle cases where the
+ * database is not fully ready to accept connections after branch creation.
  */
-async function retryDbPush(workingDirectory: string): Promise<ExecResult> {
-  for (let attempt = 1; attempt <= SEED_MAX_RETRIES; attempt++) {
-    const result = await runDbPush({ dryRun: false, includeSeed: true, workingDirectory })
+async function retryDbReset(workingDirectory: string): Promise<ExecResult> {
+  for (let attempt = 1; attempt <= RESET_MAX_RETRIES; attempt++) {
+    const result = await runDbReset(workingDirectory)
     if (result.exitCode === 0) return result
 
     const isTransient =
       result.stderr.includes('database system is starting up') ||
+      result.stderr.includes('database system is shutting down') ||
       result.stderr.includes('Connection terminated unexpectedly') ||
       result.stderr.includes('connection refused') ||
       result.stderr.includes('network is unreachable')
-    if (!isTransient || attempt === SEED_MAX_RETRIES) return result
+    if (!isTransient || attempt === RESET_MAX_RETRIES) return result
 
     core.warning(
-      `[seed attempt ${attempt}/${SEED_MAX_RETRIES}] Database not ready, retrying in ${SEED_RETRY_DELAY_MS / 1000}s...`
+      `[reset attempt ${attempt}/${RESET_MAX_RETRIES}] Database not ready, retrying in ${RESET_RETRY_DELAY_MS / 1000}s...`
     )
-    await new Promise((resolve) => setTimeout(resolve, SEED_RETRY_DELAY_MS))
+    await new Promise((resolve) => setTimeout(resolve, RESET_RETRY_DELAY_MS))
   }
 
   throw new Error('Unreachable')

@@ -45,6 +45,15 @@ export async function runDbPush(opts: {
 }
 
 /**
+ * Runs `supabase db reset --linked` in the given working directory.
+ * Drops the schema, re-applies all migrations, and runs seeds.
+ */
+export async function runDbReset(workingDirectory: string): Promise<ExecResult> {
+  core.info('Running: supabase db reset --linked')
+  return runCommand('supabase', ['db', 'reset', '--linked'], { cwd: workingDirectory })
+}
+
+/**
  * Executes a shell command and captures stdout/stderr.
  * Never throws on non-zero exit — callers check `exitCode`.
  */
