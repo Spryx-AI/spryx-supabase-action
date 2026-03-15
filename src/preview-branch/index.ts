@@ -9,7 +9,7 @@ import {
   type BranchSummary,
   type BranchDetail,
 } from './api'
-import { runAuth, runLink, runDbPush } from '../exec'
+import { runAuth, runLink, runDbPush, type ExecResult } from '../exec'
 import { writeSummary } from './summary'
 
 async function main(): Promise<void> {
@@ -59,11 +59,7 @@ async function handleCreate(inputs: BranchInputs): Promise<void> {
       core.setFailed(`Link to branch project failed: ${linkResult.stderr}`)
       return
     }
-    const pushResult = await runDbPush({
-      dryRun: false,
-      includeSeed: true,
-      workingDirectory: inputs.workingDirectory,
-    })
+    const pushResult = await retryDbPush(inputs.workingDirectory)
     if (pushResult.exitCode !== 0) {
       core.setFailed(`Seed failed: ${pushResult.stderr}`)
       return
@@ -121,6 +117,30 @@ function setCreateOutputs(summary: BranchSummary, detail: BranchDetail): void {
   core.setOutput('supabase_url', detail.supabase_url ?? '')
   core.setOutput('anon_key', detail.anon_key ?? '')
   core.setOutput('service_role_key', detail.service_role_key ?? '')
+}
+
+const SEED_MAX_RETRIES = 5
+const SEED_RETRY_DELAY_MS = 10_000
+
+/**
+ * Retries `supabase db push --include-seed` to handle cases where the
+ * database is still starting up after branch creation.
+ */
+async function retryDbPush(workingDirectory: string): Promise<ExecResult> {
+  for (let attempt = 1; attempt <= SEED_MAX_RETRIES; attempt++) {
+    const result = await runDbPush({ dryRun: false, includeSeed: true, workingDirectory })
+    if (result.exitCode === 0) return result
+
+    const isStartingUp = result.stderr.includes('database system is starting up')
+    if (!isStartingUp || attempt === SEED_MAX_RETRIES) return result
+
+    core.warning(
+      `[seed attempt ${attempt}/${SEED_MAX_RETRIES}] Database still starting up, retrying in ${SEED_RETRY_DELAY_MS / 1000}s...`
+    )
+    await new Promise((resolve) => setTimeout(resolve, SEED_RETRY_DELAY_MS))
+  }
+
+  throw new Error('Unreachable')
 }
 
 main().catch((err: unknown) => {
