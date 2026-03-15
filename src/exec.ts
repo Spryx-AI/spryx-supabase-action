@@ -45,17 +45,6 @@ export async function runDbPush(opts: {
 }
 
 /**
- * Runs `supabase db push --include-seed` against a specific database URL.
- * Skips already-applied migrations and only runs seed files.
- */
-export async function runSeed(opts: { dbUrl: string; workingDirectory: string }): Promise<ExecResult> {
-  core.info('Running: supabase db push --include-seed --db-url <masked>')
-  return runCommand('supabase', ['db', 'push', '--include-seed', '--db-url', opts.dbUrl], {
-    cwd: opts.workingDirectory,
-  })
-}
-
-/**
  * Executes a shell command and captures stdout/stderr.
  * Never throws on non-zero exit — callers check `exitCode`.
  */

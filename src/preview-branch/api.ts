@@ -22,6 +22,7 @@ export interface BranchSummary {
  * Name is NOT present in this response; use BranchSummary for that.
  */
 export interface BranchDetail {
+  ref: string
   status: string
   db_host: string
   db_port: number

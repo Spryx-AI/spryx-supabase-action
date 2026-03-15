@@ -9,7 +9,7 @@ import {
   type BranchSummary,
   type BranchDetail,
 } from './api'
-import { runAuth, runSeed } from '../exec'
+import { runAuth, runLink, runDbPush } from '../exec'
 import { writeSummary } from './summary'
 
 async function main(): Promise<void> {
@@ -54,10 +54,18 @@ async function handleCreate(inputs: BranchInputs): Promise<void> {
       core.setFailed(`Auth failed before seeding: ${authResult.stderr}`)
       return
     }
-    const dbUrl = buildDbUrl(detail)
-    const seedResult = await runSeed({ dbUrl, workingDirectory: inputs.workingDirectory })
-    if (seedResult.exitCode !== 0) {
-      core.setFailed(`Seed failed: ${seedResult.stderr}`)
+    const linkResult = await runLink(detail.ref, inputs.workingDirectory)
+    if (linkResult.exitCode !== 0) {
+      core.setFailed(`Link to branch project failed: ${linkResult.stderr}`)
+      return
+    }
+    const pushResult = await runDbPush({
+      dryRun: false,
+      includeSeed: true,
+      workingDirectory: inputs.workingDirectory,
+    })
+    if (pushResult.exitCode !== 0) {
+      core.setFailed(`Seed failed: ${pushResult.stderr}`)
       return
     }
     core.info('Seed completed successfully.')
