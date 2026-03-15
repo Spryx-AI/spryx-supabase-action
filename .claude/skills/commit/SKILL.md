@@ -9,12 +9,14 @@ This project uses **semantic-release** (JS, via `cycjimmy/semantic-release-actio
 
 ## Version Bump Rules
 
-| Commit prefix | Version bump | When to use |
-|---|---|---|
-| `fix:` / `fix(scope):` | **PATCH** (1.0.X) | Bug fixes, correcting behavior |
-| `feat:` / `feat(scope):` | **MINOR** (1.X.0) | New features, new inputs, new action capabilities |
-| `BREAKING CHANGE:` in footer or `!` after type | **MAJOR** (X.0.0) | Breaking changes to action inputs/outputs |
-| `chore:`, `docs:`, `style:`, `refactor:`, `perf:`, `test:`, `ci:`, `build:` | **No release** | Non-functional changes |
+| Commit prefix                                         | Version bump      | When to use                                       |
+| ----------------------------------------------------- | ----------------- | ------------------------------------------------- |
+| `fix:` / `fix(scope):`                                | **PATCH** (1.0.X) | Bug fixes, correcting behavior                    |
+| `feat:` / `feat(scope):`                              | **MINOR** (1.X.0) | New features, new inputs, new action capabilities |
+| `perf:` / `perf(scope):`                              | **PATCH** (1.0.X) | Performance improvements that change dist/        |
+| `refactor:` / `refactor(scope):`                      | **PATCH** (1.0.X) | Code restructuring that changes dist/             |
+| `BREAKING CHANGE:` in footer or `!` after type        | **MAJOR** (X.0.0) | Breaking changes to action inputs/outputs         |
+| `chore:`, `docs:`, `style:`, `test:`, `ci:`, `build:` | **No release**    | Changes that don't affect dist/                   |
 
 ## Commit Message Format
 
@@ -33,9 +35,9 @@ This project uses **semantic-release** (JS, via `cycjimmy/semantic-release-actio
 - `chore` — Maintenance, dependencies, config (NO release)
 - `ci` — CI/CD pipeline changes (NO release)
 - `docs` — Documentation only (NO release)
-- `refactor` — Code restructuring without behavior change (NO release)
+- `refactor` — Code restructuring without behavior change (triggers PATCH — dist/ changes)
+- `perf` — Performance improvement (triggers PATCH — dist/ changes)
 - `test` — Adding or fixing tests (NO release)
-- `perf` — Performance improvement (NO release)
 - `style` — Code formatting, whitespace (NO release)
 - `build` — Build system, packaging (NO release)
 
@@ -141,8 +143,8 @@ EOF
 ```
 commit → push to main → semantic-release analyzes commits
   → feat: found? → MINOR bump → build dist/ → tag → GitHub release
-  → fix: found? → PATCH bump → build dist/ → tag → GitHub release
-  → only chore/ci/docs/test? → NO release
+  → fix/perf/refactor: found? → PATCH bump → build dist/ → tag → GitHub release
+  → only chore/ci/docs/test/style/build? → NO release
 ```
 
 Release commits `dist/`, `package.json`, and `package-lock.json` back to main with `[skip ci]`.
