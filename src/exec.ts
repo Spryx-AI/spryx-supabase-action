@@ -50,7 +50,7 @@ export async function runDbPush(opts: {
  */
 export async function runDbReset(workingDirectory: string): Promise<ExecResult> {
   core.info('Running: supabase db reset --linked')
-  return runCommand('supabase', ['db', 'reset', '--linked', '--confirm'], { cwd: workingDirectory })
+  return runCommand('supabase', ['db', 'reset', '--linked', '--yes'], { cwd: workingDirectory })
 }
 
 /**
