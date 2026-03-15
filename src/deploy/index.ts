@@ -33,7 +33,10 @@ async function runPipeline(inputs: Inputs): Promise<StepResults> {
   const steps: Step[] = [
     ['auth', () => runAuth(inputs.supabaseAccessToken)],
     ['link', () => runLink(inputs.projectRef, inputs.workingDirectory)],
-    ['db_push', () => runDbPush({ dryRun: false, workingDirectory: inputs.workingDirectory })],
+    [
+      'db_push',
+      () => runDbPush({ dryRun: false, includeSeed: inputs.includeSeed, workingDirectory: inputs.workingDirectory }),
+    ],
   ]
 
   const results: StepResults = {}

@@ -32,8 +32,14 @@ export async function runLink(projectRef: string, workingDirectory: string): Pro
  * Runs `supabase db push` in the given working directory.
  * Passes `--dry-run` when `opts.dryRun` is true.
  */
-export async function runDbPush(opts: { dryRun: boolean; workingDirectory: string }): Promise<ExecResult> {
-  const args = opts.dryRun ? ['db', 'push', '--dry-run'] : ['db', 'push']
+export async function runDbPush(opts: {
+  dryRun: boolean
+  includeSeed: boolean
+  workingDirectory: string
+}): Promise<ExecResult> {
+  const args = ['db', 'push']
+  if (opts.dryRun) args.push('--dry-run')
+  if (opts.includeSeed) args.push('--include-seed')
   core.info(`Running: supabase ${args.join(' ')}`)
   return runCommand('supabase', args, { cwd: opts.workingDirectory })
 }

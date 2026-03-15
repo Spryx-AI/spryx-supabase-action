@@ -32,6 +32,7 @@ Authenticates the Supabase CLI, links the project, and runs `supabase db push`.
 | `supabase_access_token` | yes      | —       | Access token for CLI authentication. Always store in a secret. |
 | `working_directory`     | no       | `.`     | Directory containing the `supabase/` folder                    |
 | `write_summary`         | no       | `true`  | Write a job summary to `GITHUB_STEP_SUMMARY`                   |
+| `include_seed`          | no       | `false` | Run seed files after migrations (`--include-seed`)             |
 
 ### Outputs
 
