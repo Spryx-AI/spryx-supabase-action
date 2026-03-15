@@ -101,6 +101,8 @@ Creates or deletes an ephemeral Supabase branch tied to a PR. On creation the ac
 | `supabase_access_token` | yes      | —       | Management API bearer token. Always store in a secret.         |
 | `wait_timeout`          | no       | `120`   | Seconds to wait for the branch to become ready (`create` only) |
 | `write_summary`         | no       | `true`  | Write a job summary to `GITHUB_STEP_SUMMARY`                   |
+| `include_seed`          | no       | `false` | Run seed files after branch creation (`--include-seed`)        |
+| `working_directory`     | no       | `.`     | Directory containing the `supabase/` folder (for seeding)      |
 
 ### Outputs
 

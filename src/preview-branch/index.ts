@@ -9,6 +9,7 @@ import {
   type BranchSummary,
   type BranchDetail,
 } from './api'
+import { runAuth, runSeed } from '../exec'
 import { writeSummary } from './summary'
 
 async function main(): Promise<void> {
@@ -41,6 +42,22 @@ async function handleCreate(inputs: BranchInputs): Promise<void> {
 
   maskBranchSecrets(detail)
   setCreateOutputs(summary, detail)
+
+  if (inputs.includeSeed) {
+    core.info('Running seed files on the preview branch...')
+    const authResult = await runAuth(supabaseAccessToken)
+    if (authResult.exitCode !== 0) {
+      core.setFailed(`Auth failed before seeding: ${authResult.stderr}`)
+      return
+    }
+    const dbUrl = buildDbUrl(detail)
+    const seedResult = await runSeed({ dbUrl, workingDirectory: inputs.workingDirectory })
+    if (seedResult.exitCode !== 0) {
+      core.setFailed(`Seed failed: ${seedResult.stderr}`)
+      return
+    }
+    core.info('Seed completed successfully.')
+  }
 
   const summaryMarkdown = await writeSummary(inputs, 'create', summary, detail, 'success')
   core.setOutput('summary_markdown', summaryMarkdown)

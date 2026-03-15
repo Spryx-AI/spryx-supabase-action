@@ -10,6 +10,8 @@ export interface BranchInputs {
   supabaseAccessToken: string
   waitTimeoutMs: number
   writeSummary: boolean
+  includeSeed: boolean
+  workingDirectory: string
 }
 
 const VALID_ACTIONS: BranchAction[] = ['create', 'delete']
@@ -26,6 +28,8 @@ export function parseInputs(): BranchInputs {
   const supabaseAccessToken = core.getInput('supabase_access_token', { required: true })
   const waitTimeoutRaw = core.getInput('wait_timeout') || '120'
   const writeSummary = core.getInput('write_summary') !== 'false'
+  const includeSeed = core.getInput('include_seed') === 'true'
+  const workingDirectory = core.getInput('working_directory') || '.'
 
   core.setSecret(supabaseAccessToken)
 
@@ -42,6 +46,8 @@ export function parseInputs(): BranchInputs {
     supabaseAccessToken,
     waitTimeoutMs,
     writeSummary,
+    includeSeed,
+    workingDirectory,
   }
 }
 

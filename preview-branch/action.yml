@@ -23,28 +23,62 @@ inputs:
     description: 'Write a job summary to GITHUB_STEP_SUMMARY'
     required: false
     default: 'true'
+  include_seed:
+    description: 'Run seed files after branch creation via supabase db push --include-seed'
+    required: false
+    default: 'false'
+  working_directory:
+    description: 'Directory containing the supabase/ folder (required when include_seed is true)'
+    required: false
+    default: '.'
 
 outputs:
   status:
     description: 'Execution status: success or failure'
+    value: ${{ steps.run.outputs.status }}
   branch_id:
     description: 'Supabase branch ID'
+    value: ${{ steps.run.outputs.branch_id }}
   branch_name:
     description: 'Resolved branch name used'
+    value: ${{ steps.run.outputs.branch_name }}
   db_url:
     description: 'PostgreSQL connection string for the branch (masked)'
+    value: ${{ steps.run.outputs.db_url }}
   supabase_url:
     description: 'Supabase API URL for the branch'
+    value: ${{ steps.run.outputs.supabase_url }}
   anon_key:
     description: 'Supabase anonymous key for the branch'
+    value: ${{ steps.run.outputs.anon_key }}
   service_role_key:
     description: 'Supabase service role key for the branch (masked)'
+    value: ${{ steps.run.outputs.service_role_key }}
   summary_markdown:
     description: 'Markdown content written to job summary'
+    value: ${{ steps.run.outputs.summary_markdown }}
 
 runs:
-  using: 'node24'
-  main: '../dist/preview-branch.js'
+  using: 'composite'
+  steps:
+    - name: Install Supabase CLI
+      uses: supabase/setup-cli@v1
+      with:
+        version: latest
+
+    - id: run
+      name: Preview Branch
+      shell: bash
+      env:
+        INPUT_ACTION: ${{ inputs.action }}
+        INPUT_PROJECT_REF: ${{ inputs.project_ref }}
+        INPUT_BRANCH_NAME: ${{ inputs.branch_name }}
+        INPUT_SUPABASE_ACCESS_TOKEN: ${{ inputs.supabase_access_token }}
+        INPUT_WAIT_TIMEOUT: ${{ inputs.wait_timeout }}
+        INPUT_WRITE_SUMMARY: ${{ inputs.write_summary }}
+        INPUT_INCLUDE_SEED: ${{ inputs.include_seed }}
+        INPUT_WORKING_DIRECTORY: ${{ inputs.working_directory }}
+      run: node "${{ github.action_path }}/../dist/preview-branch.js"
 
 branding:
   icon: 'git-branch'
