@@ -131,11 +131,15 @@ async function retryDbPush(workingDirectory: string): Promise<ExecResult> {
     const result = await runDbPush({ dryRun: false, includeSeed: true, workingDirectory })
     if (result.exitCode === 0) return result
 
-    const isStartingUp = result.stderr.includes('database system is starting up')
-    if (!isStartingUp || attempt === SEED_MAX_RETRIES) return result
+    const isTransient =
+      result.stderr.includes('database system is starting up') ||
+      result.stderr.includes('Connection terminated unexpectedly') ||
+      result.stderr.includes('connection refused') ||
+      result.stderr.includes('network is unreachable')
+    if (!isTransient || attempt === SEED_MAX_RETRIES) return result
 
     core.warning(
-      `[seed attempt ${attempt}/${SEED_MAX_RETRIES}] Database still starting up, retrying in ${SEED_RETRY_DELAY_MS / 1000}s...`
+      `[seed attempt ${attempt}/${SEED_MAX_RETRIES}] Database not ready, retrying in ${SEED_RETRY_DELAY_MS / 1000}s...`
     )
     await new Promise((resolve) => setTimeout(resolve, SEED_RETRY_DELAY_MS))
   }
