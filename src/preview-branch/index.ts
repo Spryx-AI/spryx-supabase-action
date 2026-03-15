@@ -24,19 +24,23 @@ async function main(): Promise<void> {
 }
 
 /**
- * Creates or reuses a preview branch, waits until ready, then sets all outputs.
+ * Creates a fresh preview branch, waits until ready, then sets all outputs.
+ * If a branch with the same name already exists, it is deleted first to ensure
+ * a clean state (all migrations re-applied from scratch + seeds).
  */
 async function handleCreate(inputs: BranchInputs): Promise<void> {
   const { projectRef, supabaseAccessToken, waitTimeoutMs } = inputs
 
   const existing = await findBranchByName(projectRef, inputs.branchName, supabaseAccessToken)
-  const summary = existing ?? (await createBranch(projectRef, inputs.branchName, supabaseAccessToken))
 
   if (existing) {
-    core.info(`Branch "${inputs.branchName}" already exists (id: ${summary.id}), waiting for ready state...`)
-  } else {
-    core.info(`Branch created (id: ${summary.id}), waiting for ready state...`)
+    core.info(`Branch "${inputs.branchName}" already exists (id: ${existing.id}), recreating for a clean state...`)
+    await deleteBranch(existing.id, supabaseAccessToken)
+    core.info(`Branch "${inputs.branchName}" deleted.`)
   }
+
+  const summary = await createBranch(projectRef, inputs.branchName, supabaseAccessToken)
+  core.info(`Branch created (id: ${summary.id}), waiting for ready state...`)
 
   const detail = await pollUntilReady(summary.id, supabaseAccessToken, waitTimeoutMs)
 
