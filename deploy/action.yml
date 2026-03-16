@@ -45,6 +45,8 @@ runs:
       uses: supabase/setup-cli@v1
       with:
         version: latest
+      env:
+        FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
     - id: run
       name: Deploy
