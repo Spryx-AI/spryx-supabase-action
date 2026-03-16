@@ -1,6 +1,6 @@
 {
   "name": "spryx-supabase-action",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "description": "GitHub Action for deploying Supabase migrations via supabase db push",
   "main": "dist/index.js",
   "private": true,
