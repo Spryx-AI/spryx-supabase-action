@@ -27,50 +27,45 @@ export async function writeSummary(
   return markdown
 }
 
+const STEP_LABELS: Record<keyof StepResults, string> = {
+  auth: 'Authenticate',
+  link: 'Link project',
+  db_push: 'Push migrations',
+}
+
 /**
  * Builds the markdown string for the deploy job summary.
  */
 function buildMarkdown(projectRef: string, results: StepResults, status: 'success' | 'failure'): string {
-  const emoji = status === 'success' ? '✅' : '❌'
-  const applied = results.db_push?.exitCode === 0
+  const icon = status === 'success' ? '✅' : '❌'
+  const statusLabel = status === 'success' ? 'Deployed successfully' : 'Deploy failed'
 
-  const lines: string[] = [
-    `## ${emoji} Supabase DB Deploy`,
-    '',
-    '| Field | Value |',
-    '|---|---|',
-    `| **Project** | \`${projectRef}\` |`,
-    `| **Migrations applied** | \`${applied}\` |`,
-    `| **Status** | \`${status}\` |`,
-    '',
-    ...buildStepLines(results),
-  ]
+  const lines: string[] = [`## ${icon} Supabase Deploy — ${statusLabel}`, '', `**Project:** \`${projectRef}\``, '']
 
-  return lines.join('\n')
-}
-
-/**
- * Builds per-step output lines for each executed step.
- */
-function buildStepLines(results: StepResults): string[] {
-  const lines: string[] = []
-
-  for (const [step, result] of Object.entries(results) as [keyof StepResults, ExecResult | undefined][]) {
-    if (!result) continue
-
-    const emoji = result.exitCode === 0 ? '✅' : '❌'
-    lines.push(`### ${emoji} \`${step}\``)
-
-    if (result.stdout.trim()) {
-      lines.push('```', result.stdout.trim(), '```')
+  // Pipeline steps
+  lines.push('### Pipeline', '')
+  for (const [step, label] of Object.entries(STEP_LABELS) as [keyof StepResults, string][]) {
+    const result = results[step]
+    if (!result) {
+      lines.push(`- ⏭️ ${label} — skipped`)
+      continue
     }
+    const stepIcon = result.exitCode === 0 ? '✅' : '❌'
+    lines.push(`- ${stepIcon} ${label}`)
+  }
+  lines.push('')
 
-    if (result.stderr.trim() && result.exitCode !== 0) {
-      lines.push('**stderr:**', '```', result.stderr.trim(), '```')
+  // Show error details only on failure
+  const failed = Object.entries(results).find(([, r]) => r && r.exitCode !== 0) as
+    | [keyof StepResults, ExecResult]
+    | undefined
+  if (failed) {
+    const [step, result] = failed
+    const errorOutput = result.stderr.trim() || result.stdout.trim()
+    if (errorOutput) {
+      lines.push(`### Error in \`${STEP_LABELS[step]}\``, '', '```', errorOutput, '```', '')
     }
-
-    lines.push('')
   }
 
-  return lines
+  return lines.join('\n')
 }

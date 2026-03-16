@@ -15,7 +15,7 @@ export async function writeSummary(
 ): Promise<string> {
   const markdown =
     action === 'create'
-      ? buildCreateSummary(summary, detail, status)
+      ? buildCreateSummary(inputs, summary, detail, status)
       : buildDeleteSummary(inputs.branchName, summary, status)
 
   if (inputs.writeSummary) {
@@ -29,45 +29,54 @@ export async function writeSummary(
  * Builds the markdown summary for a branch create operation.
  */
 function buildCreateSummary(
+  inputs: BranchInputs,
   summary: BranchSummary | null,
   detail: BranchDetail | null,
   status: 'success' | 'failure'
 ): string {
-  const emoji = status === 'success' ? '✅' : '❌'
+  const icon = status === 'success' ? '✅' : '❌'
+  const statusLabel = status === 'success' ? 'Ready' : 'Failed'
 
   if (!summary) {
-    return [`## ${emoji} Supabase Preview Branch`, '', `Status: \`${status}\``].join('\n')
+    return [`## ${icon} Preview Branch — ${statusLabel}`, '', `Status: \`${status}\``].join('\n')
   }
 
-  const rows = [
-    `| **Branch name** | \`${summary.name}\` |`,
-    `| **Branch ID** | \`${summary.id}\` |`,
-    `| **Status** | \`${summary.status}\` |`,
-    detail?.db_host ? `| **DB host** | \`${detail.db_host}\` |` : null,
-    detail?.supabase_url ? `| **Supabase URL** | \`${detail.supabase_url}\` |` : null,
-    detail ? `| **Anon key** | \`${detail.anon_key ? 'available' : 'unavailable'}\` |` : null,
-    detail ? `| **Service role key** | \`${detail.service_role_key ? 'available' : 'unavailable'}\` |` : null,
-  ].filter(Boolean)
+  const lines: string[] = [
+    `## ${icon} Preview Branch — ${statusLabel}`,
+    '',
+    `| | |`,
+    `|---|---|`,
+    `| **Branch** | \`${summary.name}\` |`,
+    `| **ID** | \`${summary.id}\` |`,
+    `| **Project** | \`${inputs.projectRef}\` |`,
+  ]
 
-  return [
-    `## ${emoji} Supabase Preview Branch`,
-    '',
-    '| Field | Value |',
-    '|---|---|',
-    ...rows,
-    '',
-    '> Connection string and service role key are available as step outputs (masked in logs).',
-  ].join('\n')
+  if (detail?.db_host) {
+    lines.push(`| **DB host** | \`${detail.db_host}\` |`)
+  }
+  if (detail?.supabase_url) {
+    lines.push(`| **API URL** | \`${detail.supabase_url}\` |`)
+  }
+
+  lines.push('')
+
+  if (inputs.includeSeed) {
+    lines.push('> Database was reset with migrations + seeds applied.')
+  } else {
+    lines.push('> Connection details available as step outputs (masked in logs).')
+  }
+
+  return lines.join('\n')
 }
 
 /**
  * Builds the markdown summary for a branch delete operation.
  */
 function buildDeleteSummary(targetName: string, summary: BranchSummary | null, status: 'success' | 'failure'): string {
-  const emoji = status === 'success' ? '✅' : '❌'
+  const icon = status === 'success' ? '✅' : '❌'
   const detail = summary
-    ? `Branch \`${summary.name}\` (ID: \`${summary.id}\`) was deleted successfully.`
+    ? `Branch \`${summary.name}\` (ID: \`${summary.id}\`) deleted.`
     : `Branch \`${targetName}\` not found — nothing to delete.`
 
-  return [`## ${emoji} Supabase Preview Branch — Cleanup`, '', detail].join('\n')
+  return [`## ${icon} Preview Branch — Cleanup`, '', detail].join('\n')
 }
