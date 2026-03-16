@@ -1,0 +1,53 @@
+name: 'Spryx Supabase Rollback'
+description: 'Restore a Supabase project to a point-in-time via PITR'
+author: 'Spryx'
+
+inputs:
+  project_ref:
+    description: 'Supabase project reference ID'
+    required: true
+  supabase_access_token:
+    description: 'Supabase access token for Management API authentication'
+    required: true
+  restore_point:
+    description: 'Unix timestamp (seconds) from the deploy action restore_point output'
+    required: true
+  wait_timeout:
+    description: 'Seconds to wait for restore to complete'
+    required: false
+    default: '300'
+  write_summary:
+    description: 'Write a job summary to GITHUB_STEP_SUMMARY'
+    required: false
+    default: 'true'
+
+outputs:
+  status:
+    description: 'Execution status: success or failure'
+    value: ${{ steps.run.outputs.status }}
+  summary_markdown:
+    description: 'Markdown content written to job summary'
+    value: ${{ steps.run.outputs.summary_markdown }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '24'
+
+    - id: run
+      name: Rollback
+      shell: bash
+      env:
+        INPUT_PROJECT_REF: ${{ inputs.project_ref }}
+        INPUT_SUPABASE_ACCESS_TOKEN: ${{ inputs.supabase_access_token }}
+        INPUT_RESTORE_POINT: ${{ inputs.restore_point }}
+        INPUT_WAIT_TIMEOUT: ${{ inputs.wait_timeout }}
+        INPUT_WRITE_SUMMARY: ${{ inputs.write_summary }}
+      run: node "${{ github.action_path }}/../dist/rollback.js"
+
+branding:
+  icon: 'rotate-ccw'
+  color: 'orange'

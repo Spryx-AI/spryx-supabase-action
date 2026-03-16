@@ -10,6 +10,9 @@ async function main(): Promise<void> {
 
   core.info(`Deploy: supabase db push | project: ${inputs.projectRef}`)
 
+  const restorePoint = Math.floor(Date.now() / 1000)
+  core.info(`Restore point captured: ${restorePoint} (Unix epoch seconds)`)
+
   const results = await runPipeline(inputs)
   const status = getStatus(results)
   const applied = results.db_push?.exitCode === 0
@@ -18,6 +21,7 @@ async function main(): Promise<void> {
 
   core.setOutput('status', status)
   core.setOutput('executed_db_push', String(applied))
+  core.setOutput('restore_point', String(restorePoint))
   core.setOutput('summary_markdown', summaryMarkdown)
 
   if (status === 'failure') {

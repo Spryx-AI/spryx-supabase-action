@@ -5,6 +5,7 @@ const fs = require('fs')
 const entryPoints = [
   { input: 'dist_tsc/deploy/index.js', output: 'dist/deploy.js' },
   { input: 'dist_tsc/preview-branch/index.js', output: 'dist/preview-branch.js' },
+  { input: 'dist_tsc/rollback/index.js', output: 'dist/rollback.js' },
 ]
 
 fs.mkdirSync('dist', { recursive: true })

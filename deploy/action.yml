@@ -29,6 +29,9 @@ outputs:
   executed_db_push:
     description: 'Whether migrations were applied (true/false)'
     value: ${{ steps.run.outputs.executed_db_push }}
+  restore_point:
+    description: 'Unix timestamp (seconds) captured before migrations, for PITR rollback'
+    value: ${{ steps.run.outputs.restore_point }}
   summary_markdown:
     description: 'The markdown content written to the job summary'
     value: ${{ steps.run.outputs.summary_markdown }}
