@@ -133,6 +133,7 @@ async function retryDbReset(workingDirectory: string): Promise<ExecResult> {
       result.stderr.includes('database system is starting up') ||
       result.stderr.includes('database system is shutting down') ||
       result.stderr.includes('Connection terminated unexpectedly') ||
+      result.stderr.includes('terminating connection due to administrator command') ||
       result.stderr.includes('connection refused') ||
       result.stderr.includes('network is unreachable')
     if (!isTransient || attempt === RESET_MAX_RETRIES) return result
